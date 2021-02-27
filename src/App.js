@@ -7,9 +7,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
 import CardActionArea from '@material-ui/core/CardActionArea';
-import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
-import CardMedia from '@material-ui/core/CardMedia';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 
@@ -29,13 +27,47 @@ const App = () => {
   }
 
   function getData() {
-    axios.get('http://api.openweathermap.org/data/2.5/group?id=' + cityList.join() + '&units=metrics&appid=a5e697bf28e349a188a6fbcb905fb128')
-      .then(response => {
-        setWeatherInfo(response.data.list)
-        console.log(response.data.list[0].name);
-      });
+    if (localStorage.getItem('weather')) {
+      console.log('getting the existing key');
+      getLocalStorage('weather');
+    } else {
+      axios.get('http://api.openweathermap.org/data/2.5/group?id=' + cityList.join() + '&units=metrics&appid=a5e697bf28e349a188a6fbcb905fb128')
+        .then(response => {
+          setWeatherInfo(response.data.list)
+          setLocalStorage('weather', response, 300000);
+          console.log('no such key');
+          console.log(response.data.list[0].name);
+        });
+    }
   } { }
 
+  function setLocalStorage(keyName, data, ttl) {
+    const now = new Date()
+				const item = {
+					value: data,
+					expiry: now.getTime() + ttl,
+				}
+				localStorage.setItem(keyName, JSON.stringify(item))
+  }
+
+  function getLocalStorage(keyName) {
+    const itemStr = localStorage.getItem(keyName)
+				const item = JSON.parse(itemStr)
+				const now = new Date()
+				if (now.getTime() > item.expiry) {
+					localStorage.removeItem(keyName)
+          axios.get('http://api.openweathermap.org/data/2.5/group?id=' + cityList.join() + '&units=metrics&appid=a5e697bf28e349a188a6fbcb905fb128')
+            .then(response => {
+              setWeatherInfo(response.data.list)
+              setLocalStorage(keyName, response, 300000);
+              console.log('key expired so removed and new axios call to setup');
+              console.log(response.data.list[0].name);
+          });
+				} else {
+            console.log('key not expired');
+            setWeatherInfo(item.value.data.list)
+        }
+  }
   const useStyles = makeStyles({
     root: {
       width: '30px'
