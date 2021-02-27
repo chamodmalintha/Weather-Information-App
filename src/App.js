@@ -68,11 +68,6 @@ const App = () => {
             setWeatherInfo(item.value.data.list)
         }
   }
-  const useStyles = makeStyles({
-    root: {
-      width: '30px'
-    },
-  });
 
 
   return (
